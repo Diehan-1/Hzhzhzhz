@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VulnShop - Home</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f9f9f9; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+        .product { border: 1px solid #ddd; padding: 15px; margin: 10px; display: inline-block; width: 200px; }
+        .search-box { margin: 20px 0; }
+        input, button { padding: 8px; }
+        .comments { margin-top: 30px; border-top: 2px solid #ccc; }
+        .comment { background: #eee; margin: 8px 0; padding: 8px; }
+        .vuln-note { background: #fff0f0; padding: 10px; margin: 10px 0; border-left: 5px solid red; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🛒 VulnShop – Home</h1>
+    <nav><a href="login.html">Login</a> | <a href="home.html">Home</a> | <a href="#" id="clearStorage">Clear Storage (reset XSS)</a></nav>
+
+    <!-- VULNERABLE SEARCH (Reflected XSS) -->
+    <div class="search-box">
+        <h3>Search products</h3>
+        <input type="text" id="searchInput" placeholder="Search term...">
+        <button id="searchBtn">Search</button>
+        <div id="searchResult"></div>
+        <small><strong>Vuln:</strong> Search term is directly injected via innerHTML → XSS. Try: <code>&lt;img src=x onerror=alert(1)&gt;</code></small>
+    </div>
+
+    <!-- Products (links to order page with unsanitized params) -->
+    <h3>Featured Products</h3>
+    <div id="productList">
+        <div class="product"><strong>Laptop Pro</strong><br>$999<br><button onclick="orderProduct('Laptop Pro', '999')">Order Now</button></div>
+        <div class="product"><strong>Smartphone X</strong><br>$699<br><button onclick="orderProduct('Smartphone X', '699')">Order Now</button></div>
+        <div class="product"><strong>Wireless Headphones</strong><br>$199<br><button onclick="orderProduct('Wireless Headphones', '199')">Order Now</button></div>
+    </div>
+    <p><strong>Vuln:</strong> Product name/price passed to order.html via URL without encoding → XSS in order page.</p>
+
+    <!-- STORED XSS via localStorage comments -->
+    <div class="comments">
+        <h3>User Reviews (Stored XSS)</h3>
+        <input type="text" id="commentName" placeholder="Your name" style="width: 30%;">
+        <input type="text" id="commentText" placeholder="Your review" style="width: 50%;">
+        <button id="addCommentBtn">Add Review</button>
+        <div id="commentsContainer"></div>
+        <small><strong>Vuln:</strong> Reviews saved to localStorage and rendered with innerHTML → persistent XSS. Try: <code>&lt;script&gt;alert('stored')&lt;/script&gt;</code> but innerHTML won't run script tags, use <code>&lt;img src=x onerror=alert('stored XSS')&gt;</code></small>
+    </div>
+</div>
+
+<script>
+    // --- Reflected XSS: search ---
+    document.getElementById('searchBtn').addEventListener('click', function() {
+        let query = document.getElementById('searchInput').value;
+        let resultDiv = document.getElementById('searchResult');
+        // VULNERABLE: unsanitized insertion
+        resultDiv.innerHTML = `<div class="vuln-note">🔍 You searched for: ${query}<br>No results for "${query}" (demo).</div>`;
+    });
+
+    // Product order function (vulnerable URL builder)
+    function orderProduct(name, price) {
+        // No sanitization – product name can contain XSS payload
+        window.location.href = `order.html?product=${encodeURIComponent(name)}&price=${price}`;
+        // Note: encodeURIComponent prevents URL breaking but NOT XSS when decoded and injected unsafely.
+        // The order page will inject the decoded value unsafely – so it's still vulnerable.
+    }
+
+    // --- Stored XSS: comments using localStorage ---
+    function loadComments() {
+        let comments = JSON.parse(localStorage.getItem('shopComments')) || [];
+        let container = document.getElementById('commentsContainer');
+        container.innerHTML = '';  // clear
+        comments.forEach(comment => {
+            // VULNERABLE: innerHTML with raw user data
+            let div = document.createElement('div');
+            div.className = 'comment';
+            div.innerHTML = `<strong>${comment.name}</strong>: ${comment.text}`;
+            container.appendChild(div);
+        });
+    }
+
+    function saveComment(name, text) {
+        let comments = JSON.parse(localStorage.getItem('shopComments')) || [];
+        comments.push({ name: name, text: text });
+        localStorage.setItem('shopComments', JSON.stringify(comments));
+        loadComments();  // re-render (vulnerable)
+    }
+
+    document.getElementById('addCommentBtn').addEventListener('click', function() {
+        let name = document.getElementById('commentName').value;
+        let text = document.getElementById('commentText').value;
+        if (name && text) saveComment(name, text);
+        else alert("Both fields required");
+    });
+
+    document.getElementById('clearStorage').addEventListener('click', function(e) {
+        e.preventDefault();
+        localStorage.removeItem('shopComments');
+        loadComments();
+        alert('Comments cleared');
+    });
+
+    loadComments();
+</script>
+</body>
+</html>

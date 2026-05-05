@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VulnShop - Order</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f1f1f1; }
+        .order-box { background: white; padding: 20px; border-radius: 8px; }
+        input, button { display: block; width: 100%; margin: 10px 0; padding: 8px; }
+        .summary { background: #eef; padding: 10px; margin: 15px 0; }
+        .vuln-alert { background: #ffe0e0; padding: 8px; border-left: 4px solid red; }
+        button { background: #2c3e66; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="order-box">
+    <h2>Complete Your Order</h2>
+    <nav><a href="home.html">🏠 Home</a> | <a href="login.html">🔐 Login</a></nav>
+
+    <div id="orderSummary" class="summary"></div>
+    
+    <h3>Shipping Details</h3>
+    <form id="orderForm">
+        <input type="text" id="fullName" placeholder="Full Name">
+        <input type="text" id="address" placeholder="Address">
+        <input type="number" id="quantity" value="1">
+        <button type="submit">Place Order</button>
+    </form>
+    <div id="confirmationMsg" class="vuln-alert"></div>
+    
+    <p><strong>Vulnerability:</strong> Product name from URL is injected without sanitization → XSS. Also final confirmation message injects user input (name/product).<br>
+    Try: <code>order.html?product=&lt;img src=x onerror=alert('XSS')&gt;&price=100</code></p>
+</div>
+
+<script>
+    // Get product details from URL (vulnerable reflected XSS)
+    const urlParams = new URLSearchParams(window.location.search);
+    let product = urlParams.get('product') || 'Unknown Product';
+    let price = urlParams.get('price') || '0';
+
+    // VULNERABLE: direct insertion of product name (and price) into innerHTML
+    const summaryDiv = document.getElementById('orderSummary');
+    summaryDiv.innerHTML = `<h3>Order Summary</h3>
+                            <p>Product: ${product}</p>
+                            <p>Price per unit: $${price}</p>
+                            <p>Total: $${price} (will update with quantity)</p>`;
+
+    // Additional DOM-based injection when form is submitted
+    const orderForm = document.getElementById('orderForm');
+    const confirmDiv = document.getElementById('confirmationMsg');
+    
+    orderForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('fullName').value;
+        const qty = document.getElementById('quantity').value;
+        const total = parseFloat(price) * qty;
+        
+        // VULNERABLE: concatenating unsanitized product, name, etc. into innerHTML
+        confirmDiv.innerHTML = `✅ Order placed!<br>
+                                <strong>${name}</strong>, you ordered ${qty} x ${product}.<br>
+                                Total: $${total}. We'll ship to ${document.getElementById('address').value}.<br>
+                                <span style="color:red;">(Demonstration – no real charge)</span>`;
+    });
+</script>
+</body>
+</html>
