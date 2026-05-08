@@ -26,11 +26,7 @@
         <input type="number" id="quantity" value="1">
         <button type="submit">Place Order</button>
     </form>
-    <div id="confirmationMsg" class="vuln-alert"></div>
     
-    <p><strong>Vulnerability:</strong> Product name from URL is injected without sanitization → XSS. Also final confirmation message injects user input (name/product).<br>
-    Try: <code>order.html?product=&lt;img src=x onerror=alert('XSS')&gt;&price=100</code></p>
-</div>
 
 <script>
     // Get product details from URL (vulnerable reflected XSS)
