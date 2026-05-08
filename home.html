@@ -25,8 +25,7 @@
         <input type="text" id="searchInput" placeholder="Search term...">
         <button id="searchBtn">Search</button>
         <div id="searchResult"></div>
-        <small><strong>Vuln:</strong> Search term is directly injected via innerHTML → XSS. Try: <code>&lt;img src=x onerror=alert(1)&gt;</code></small>
-    </div>
+         </div>
 
     <!-- Products (links to order page with unsanitized params) -->
     <h3>Featured Products</h3>
@@ -43,8 +42,7 @@
         <input type="text" id="commentText" placeholder="Your review" style="width: 50%;">
         <button id="addCommentBtn">Add Review</button>
         <div id="commentsContainer"></div>
-        <small><strong>Vuln:</strong> Reviews saved to localStorage and rendered with innerHTML → persistent XSS. Try: <code>&lt;script&gt;alert('stored')&lt;/script&gt;</code> but innerHTML won't run script tags, use <code>&lt;img src=x onerror=alert('stored XSS')&gt;</code></small>
-    </div>
+        </div>
 </div>
 
 <script>
