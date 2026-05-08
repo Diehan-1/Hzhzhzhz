@@ -17,29 +17,33 @@
         <button type="submit">Login</button>
     </form>
     
-    
+    <div id="errorMsg"></div>
 
     <script>
-        // VULNERABLE: open redirect via 'next' parameter
         const urlParams = new URLSearchParams(window.location.search);
         let redirectTarget = urlParams.get('next');
+
+        // পাসওয়ার্ড এনকোডেড (seclist এর প্রথম দিকের একটি কমন পাসওয়ার্ড)
+        // কোনো UI তে শো করে না, সোর্স কোড দেখলেও সরাসরি বোঝা যাবে না
+        const _0x9f3k = [0x1d, 0x1c, 0x17, 0x1d, 0x1a, 0x10, 0x1d, 0x0c];
+        let _hidden = '';
+        for (let i = 0; i < _0x9f3k.length; i++) {
+            _hidden += String.fromCharCode(_0x9f3k[i] ^ 0x6c);
+        }
 
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('errorMsg');
+            let errorDiv = document.getElementById('errorMsg');
 
-            // Hardcoded check (no backend)
-            if (username === 'admin' && password === 'admin123') {
-                // VULNERABLE: unsanitized redirect – can lead to javascript: or arbitrary URL
+            if (username === 'admin' && password === _hidden) {
                 if (redirectTarget) {
-                    window.location.href = redirectTarget;   // open redirect / javascript:alert('hi')
+                    window.location.href = redirectTarget;
                 } else {
                     window.location.href = 'home.html';
                 }
             } else {
-                // VULNERABLE: direct injection of user input into innerHTML
                 errorDiv.innerHTML = '❌ Invalid login for: ' + username;
             }
         });
